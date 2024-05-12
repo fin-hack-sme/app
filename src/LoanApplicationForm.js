@@ -3,6 +3,8 @@ import { TextField, Button, Container, Typography } from '@mui/material';
 import { ThemeProvider } from '@mui/system';
 import { createTheme } from '@mui/material/styles';
 import { Card, CardContent } from '@mui/material';
+import ThumbUpIcon from '@mui/icons-material/ThumbUp';
+import ThumbDownIcon from '@mui/icons-material/ThumbDown';
 
 function LoanApplicationForm() {
   const [formData, setFormData] = useState({
@@ -29,8 +31,8 @@ function LoanApplicationForm() {
       setInputData(formData);
       const formData2 = {
         TAN_ID: formData.tanNumber,
-        Tenure: 10,
-        Requested_Amount: 10,
+        Tenure: formData.tenure,
+        Requested_Amount: formData.loanAmount,
       };
 
       fetch('https://finhack-sme-loan-api-q6wnl32pqq-el.a.run.app/predict_loan_approval/', {
@@ -56,16 +58,6 @@ function LoanApplicationForm() {
           }
         })
 
-        // .then(data => {
-        //   setApiResponse(data);
-        //   if (data.message === "Invalid TAN Number Provided") {
-        //     setFormErrors({ ...formErrors, tanNumber: data.message });
-        //   } else if (data.data && data.data.prediction === "Rejected") {
-        //     setFormErrors({ ...formErrors, general: "Your loan application was rejected." });
-        //   } else if (data.data && data.data.prediction === "Approved") {
-        //     setIsSubmitted(true);
-        //   }
-        // })
         .catch((error) => {
           console.error('Error:', error);
         });
@@ -92,14 +84,14 @@ function LoanApplicationForm() {
     <ThemeProvider theme={theme}>
       <Container maxWidth="sm">
         <Typography variant="h4" component="h1" gutterBottom>
-          Loan Application Form
+          Cronus Loan Application
         </Typography>
         {isSubmitted ? (
           <>
             <Card variant="outlined" style={{ margin: '20px 0' }}>
               <CardContent>
                 <Typography variant="h5" component="h2" gutterBottom>
-                  Input Data:
+                  Applied Loan Details:
                 </Typography>
                 <Typography variant="body1">
                   {Object.entries(inputData).map(([key, value]) => (
@@ -115,13 +107,23 @@ function LoanApplicationForm() {
                 <Typography variant="h5" component="h2" gutterBottom>
                   Loan Application Status:
                 </Typography>
-                <Typography variant="body1">
-                  {Object.entries(apiResponse).map(([key, value]) => (
-                    <div key={key}>
-                      <strong>{key}:</strong> {JSON.stringify(value, null, 2)}
-                    </div>
-                  ))}
+                <Typography variant="body2" component="p">
+                  <strong>Message:</strong> {apiResponse.message}
                 </Typography>
+                {apiResponse.data && (
+                  <>
+                    <Typography variant="body2" component="p">
+                      <strong>Prediction:</strong> {apiResponse.data.prediction}
+                      {apiResponse.data.prediction === "Approved" ? <ThumbUpIcon color="primary" /> : <ThumbDownIcon color="error" />}
+                    </Typography>
+                    {/* <Typography variant="body2" component="p">
+                      <strong>Approved Percentage:</strong> {apiResponse.data.approved_percentage}%
+                    </Typography> */}
+                    <Typography variant="body2" component="p">
+                      <strong>Interest Rate:</strong> {apiResponse.data.interest_rate* 100}%
+                    </Typography>
+                  </>
+                )}
               </CardContent>
             </Card>
           </>
