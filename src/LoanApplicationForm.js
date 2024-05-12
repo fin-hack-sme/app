@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { TextField, Button, Container, Typography } from '@mui/material';
 import { ThemeProvider } from '@mui/system';
 import { createTheme } from '@mui/material/styles';
+import { Card, CardContent } from '@mui/material';
 
 function LoanApplicationForm() {
   const [formData, setFormData] = useState({
     tanNumber: '',
     loanAmount: '',
     tenure: '',
-    applicantName: ''
   });
   const [formErrors, setFormErrors] = useState({});
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -17,23 +17,36 @@ function LoanApplicationForm() {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
-  
+
+  const [apiResponse, setApiResponse] = useState(null);
+  const [inputData, setInputData] = useState(null);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     const errors = validate(formData);
     setFormErrors(errors);
     if (Object.keys(errors).length === 0) {
-      fetch('https://finhack-sme-loan-api-q6wnl32pqq-el.a.run.app/validate_tan_pan_din', {
+      setInputData(formData);
+      // fetch('/predict_loan_approval/', {
+      fetch('https://finhack-sme-loan-api-q6wnl32pqq-el.a.run.app/predict_loan_approval', {
+      // fetch('http://localhost:8000/predict_loan_approval/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Origin': 'http://127.0.0.1:3000/',
         },
         body: JSON.stringify(formData),
       })
       .then(response => response.json())
       .then(data => {
-        console.log('Success:', data);
-        setIsSubmitted(true);
+        setApiResponse(data);
+        if (data.message === "Invalid TAN Number Provided") {
+          setFormErrors({ ...formErrors, tanNumber: data.message });
+        } else if (data.data && data.data.prediction === "Rejected") {
+          setFormErrors({ ...formErrors, general: "Your loan application was rejected." });
+        } else {
+          setIsSubmitted(true);
+        }
       })
       .catch((error) => {
         console.error('Error:', error);
@@ -43,7 +56,6 @@ function LoanApplicationForm() {
 
   const validate = (data) => {
     let errors = {};
-    if (!data.applicantName) errors.applicantName = "Applicant Name is required";
     if (!data.tanNumber) errors.tanNumber = "TAN Number is required";
     if (!data.loanAmount) errors.loanAmount = "Loan Amount is required";
     if (!data.tenure) errors.tenure = "Tenure is required";
@@ -64,13 +76,39 @@ function LoanApplicationForm() {
         <Typography variant="h4" component="h1" gutterBottom>
           Loan Application Form
         </Typography>
-        {isSubmitted ? (
-          <Typography variant="h5" component="h2" gutterBottom>
-            Your application is under review.
-          </Typography>
-        ) : (
+        {isSubmitted ?(
+  <>
+    <Card variant="outlined" style={{ margin: '20px 0' }}>
+      <CardContent>
+        <Typography variant="h5" component="h2" gutterBottom>
+          Input Data:
+        </Typography>
+        <Typography variant="body1">
+          {Object.entries(inputData).map(([key, value]) => (
+            <div key={key}>
+              <strong>{key}:</strong> {value}
+            </div>
+          ))}
+        </Typography>
+      </CardContent>
+    </Card>
+    <Card variant="outlined">
+      <CardContent>
+        <Typography variant="h5" component="h2" gutterBottom>
+          Loan Application Status:
+        </Typography>
+        <Typography variant="body1">
+          {Object.entries(apiResponse).map(([key, value]) => (
+            <div key={key}>
+              <strong>{key}:</strong> {JSON.stringify(value, null, 2)}
+            </div>
+          ))}
+        </Typography>
+      </CardContent>
+    </Card>
+  </>
+) : (
           <form onSubmit={handleSubmit}>
-            <TextField label="Applicant Name" name="applicantName" value={formData.applicantName} onChange={handleChange} fullWidth margin="normal" error={!!formErrors.applicantName} helperText={formErrors.applicantName} />
             <TextField label="TAN Number" name="tanNumber" value={formData.tanNumber} onChange={handleChange} fullWidth margin="normal" error={!!formErrors.tanNumber} helperText={formErrors.tanNumber} />
             <TextField label="Loan Amount" name="loanAmount" value={formData.loanAmount} onChange={handleChange} fullWidth margin="normal" error={!!formErrors.loanAmount} helperText={formErrors.loanAmount} type="number" />
             <TextField label="Tenure" name="tenure" value={formData.tenure} onChange={handleChange} fullWidth margin="normal" error={!!formErrors.tenure} helperText={formErrors.tenure} type="number" />
