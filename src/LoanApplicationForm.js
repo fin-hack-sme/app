@@ -17,14 +17,27 @@ function LoanApplicationForm() {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
-
+  
   const handleSubmit = (e) => {
     e.preventDefault();
     const errors = validate(formData);
     setFormErrors(errors);
     if (Object.keys(errors).length === 0) {
-      setIsSubmitted(true);
-      console.log('Form submitted:', formData);
+      fetch('https://finhack-sme-loan-api-q6wnl32pqq-el.a.run.app/validate_tan_pan_din', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Success:', data);
+        setIsSubmitted(true);
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+      });
     }
   };
 
