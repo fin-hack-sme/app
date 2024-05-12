@@ -27,30 +27,48 @@ function LoanApplicationForm() {
     setFormErrors(errors);
     if (Object.keys(errors).length === 0) {
       setInputData(formData);
-      // fetch('/predict_loan_approval/', {
-      fetch('https://finhack-sme-loan-api-q6wnl32pqq-el.a.run.app/predict_loan_approval', {
-      // fetch('http://localhost:8000/predict_loan_approval/', {
+      const formData2 = {
+        TAN_ID: formData.tanNumber,
+        Tenure: 10,
+        Requested_Amount: 10,
+      };
+
+      fetch('https://finhack-sme-loan-api-q6wnl32pqq-el.a.run.app/predict_loan_approval/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Origin': 'http://127.0.0.1:3000/',
+          'Origin': 'https://finhack-sme-loan-api-q6wnl32pqq-el.a.run.app',
+          'Referer': 'https://finhack-sme-loan-api-q6wnl32pqq-el.a.run.app/docs',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(formData2),
       })
-      .then(response => response.json())
-      .then(data => {
-        setApiResponse(data);
-        if (data.message === "Invalid TAN Number Provided") {
-          setFormErrors({ ...formErrors, tanNumber: data.message });
-        } else if (data.data && data.data.prediction === "Rejected") {
-          setFormErrors({ ...formErrors, general: "Your loan application was rejected." });
-        } else {
-          setIsSubmitted(true);
-        }
-      })
-      .catch((error) => {
-        console.error('Error:', error);
-      });
+
+        .then(response => response.json())
+        .then(data => {
+          setApiResponse(data);
+          if (data.message === "Invalid TAN Number Provided") {
+            setFormErrors({ ...formErrors, tanNumber: data.message });
+          } else if (data.data && data.data.prediction === "Rejected") {
+            setFormErrors({ ...formErrors, general: "Your loan application was rejected." });
+            setIsSubmitted(true); // Add this line
+          } else if (data.data && data.data.prediction === "Approved") {
+            setIsSubmitted(true);
+          }
+        })
+
+        // .then(data => {
+        //   setApiResponse(data);
+        //   if (data.message === "Invalid TAN Number Provided") {
+        //     setFormErrors({ ...formErrors, tanNumber: data.message });
+        //   } else if (data.data && data.data.prediction === "Rejected") {
+        //     setFormErrors({ ...formErrors, general: "Your loan application was rejected." });
+        //   } else if (data.data && data.data.prediction === "Approved") {
+        //     setIsSubmitted(true);
+        //   }
+        // })
+        .catch((error) => {
+          console.error('Error:', error);
+        });
     }
   };
 
@@ -76,38 +94,38 @@ function LoanApplicationForm() {
         <Typography variant="h4" component="h1" gutterBottom>
           Loan Application Form
         </Typography>
-        {isSubmitted ?(
-  <>
-    <Card variant="outlined" style={{ margin: '20px 0' }}>
-      <CardContent>
-        <Typography variant="h5" component="h2" gutterBottom>
-          Input Data:
-        </Typography>
-        <Typography variant="body1">
-          {Object.entries(inputData).map(([key, value]) => (
-            <div key={key}>
-              <strong>{key}:</strong> {value}
-            </div>
-          ))}
-        </Typography>
-      </CardContent>
-    </Card>
-    <Card variant="outlined">
-      <CardContent>
-        <Typography variant="h5" component="h2" gutterBottom>
-          Loan Application Status:
-        </Typography>
-        <Typography variant="body1">
-          {Object.entries(apiResponse).map(([key, value]) => (
-            <div key={key}>
-              <strong>{key}:</strong> {JSON.stringify(value, null, 2)}
-            </div>
-          ))}
-        </Typography>
-      </CardContent>
-    </Card>
-  </>
-) : (
+        {isSubmitted ? (
+          <>
+            <Card variant="outlined" style={{ margin: '20px 0' }}>
+              <CardContent>
+                <Typography variant="h5" component="h2" gutterBottom>
+                  Input Data:
+                </Typography>
+                <Typography variant="body1">
+                  {Object.entries(inputData).map(([key, value]) => (
+                    <div key={key}>
+                      <strong>{key}:</strong> {value}
+                    </div>
+                  ))}
+                </Typography>
+              </CardContent>
+            </Card>
+            <Card variant="outlined">
+              <CardContent>
+                <Typography variant="h5" component="h2" gutterBottom>
+                  Loan Application Status:
+                </Typography>
+                <Typography variant="body1">
+                  {Object.entries(apiResponse).map(([key, value]) => (
+                    <div key={key}>
+                      <strong>{key}:</strong> {JSON.stringify(value, null, 2)}
+                    </div>
+                  ))}
+                </Typography>
+              </CardContent>
+            </Card>
+          </>
+        ) : (
           <form onSubmit={handleSubmit}>
             <TextField label="TAN Number" name="tanNumber" value={formData.tanNumber} onChange={handleChange} fullWidth margin="normal" error={!!formErrors.tanNumber} helperText={formErrors.tanNumber} />
             <TextField label="Loan Amount" name="loanAmount" value={formData.loanAmount} onChange={handleChange} fullWidth margin="normal" error={!!formErrors.loanAmount} helperText={formErrors.loanAmount} type="number" />
